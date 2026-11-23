@@ -18,16 +18,16 @@ const { buildClaimRow } = require("./claims");
 
 function buildTicketPanelPayload() {
   const panelEmbed = new EmbedBuilder()
-    .setTitle("🎫 Support & Tickets")
+    .setTitle("🎫 Ticket Center")
     .setColor(0x5865f2)
     .setDescription(
-      "Need help, want to claim a prize, or looking to make a purchase?\n" +
-      "Click the matching button below to open a private ticket with our team.\n\n" +
-      "🛠️ **Support** — General help, questions, or player reports\n" +
-      "🎁 **Claims** — Giveaway, event, or reward claims\n" +
-      "💳 **Purchases** — Orders, shop inquiries, or billing help"
+      "Select a category below to open a private ticket with our staff team.\n\n" +
+      "🛠️ **Support** — Questions, server help, or member reports\n" +
+      "🎁 **Claims** — Giveaway wins, rewards, or event prizes\n" +
+      "💳 **Purchases** — Orders, store items, or payment help\n\n" +
+      "*Please provide clear details once opened and avoid duplicate tickets.*"
     )
-    .setFooter({ text: "Please do not open duplicate or troll tickets." });
+    .setFooter({ text: "Staff will respond as soon as possible" });
 
   const panelRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
