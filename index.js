@@ -11,7 +11,13 @@ const {
 } = require("discord.js");
 const { TOKEN, CLIENT_ID } = require("./config");
 const { isTicketStaff } = require("./permissions");
-const { claimTicket, unclaimTicket } = require("./claims");
+const {
+  claimTicket,
+  unclaimTicket,
+  isClaimTicket,
+  buildVouchCheckPayload,
+  handleVouchCheckButton
+} = require("./claims");
 const { closeTicketChannel } = require("./transcript");
 const { createTicketChannel } = require("./panel");
 const { slashCommands, handleSlashCommand } = require("./commands/slash");
@@ -70,6 +76,14 @@ client.on("interactionCreate", async (interaction) => {
     const reason =
       interaction.fields.getTextInputValue("close_reason").trim() ||
       "No reason provided";
+
+    if (isClaimTicket(channel)) {
+      channel._pendingCloseReason = reason;
+      channel._pendingCloseMethod = "Close With Reason";
+      const vouchPayload = await buildVouchCheckPayload(channel, guild);
+      return interaction.reply(vouchPayload);
+    }
+
     await interaction.deferUpdate().catch(() => null);
 
     return closeTicketChannel({
@@ -84,6 +98,19 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.isButton() && interaction.customId.startsWith("tkt_")) {
     const id = interaction.customId.toLowerCase();
 
+    if (id === "tkt_vouch_yes" || id === "tkt_vouch_no") {
+      if (!isTicketStaff(member)) {
+        return interaction.reply({
+          content: "❌ Only staff members can respond to the vouch check.",
+          ephemeral: true
+        });
+      }
+      return handleVouchCheckButton({
+        interaction,
+        closeTicketChannel
+      });
+    }
+
     if (id === "tkt_close") {
       if (!isTicketStaff(member)) {
         return interaction.reply({
@@ -91,6 +118,14 @@ client.on("interactionCreate", async (interaction) => {
           ephemeral: true
         });
       }
+
+      if (isClaimTicket(channel)) {
+        channel._pendingCloseReason = "Closed via Close button";
+        channel._pendingCloseMethod = "Close Button";
+        const vouchPayload = await buildVouchCheckPayload(channel, guild);
+        return interaction.reply(vouchPayload);
+      }
+
       return closeTicketChannel({
         channel,
         guild,
