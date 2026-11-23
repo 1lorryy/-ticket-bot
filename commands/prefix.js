@@ -14,6 +14,14 @@ const {
 const { closeTicketChannel } = require("../transcript");
 const { buildTicketPanelPayload } = require("../panel");
 
+function deleteAfter(msg, delayMs = 5000) {
+  if (!msg) return;
+  const timer = setTimeout(() => {
+    msg.delete().catch(() => null);
+  }, delayMs);
+  if (typeof timer.unref === "function") timer.unref();
+}
+
 async function handlePrefixCommand(message, client) {
   if (message.author.bot || !message.guild) return;
   if (!message.content.startsWith(PREFIX)) return;
@@ -72,7 +80,9 @@ async function handlePrefixCommand(message, client) {
     }
     await message.delete().catch(() => null);
     await channel.setName(cleanName);
-    return channel.send(`✏️ Renamed ticket to **#${cleanName}**.`);
+    const notice = await channel.send(`✏️ Renamed ticket to **#${cleanName}**.`);
+    deleteAfter(notice, 5000);
+    return notice;
   }
 
   if (cmd === "close") {
@@ -86,7 +96,9 @@ async function handlePrefixCommand(message, client) {
       channel._pendingCloseReason = reason;
       channel._pendingCloseMethod = "Prefix Command";
       const vouchPayload = await buildVouchCheckPayload(channel, guild);
-      return channel.send(vouchPayload);
+      const promptMsg = await channel.send(vouchPayload);
+      deleteAfter(promptMsg, 30000);
+      return promptMsg;
     }
 
     return closeTicketChannel({
