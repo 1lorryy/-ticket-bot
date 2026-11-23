@@ -7,6 +7,8 @@ const {
 const { ticketStore, saveTickets } = require("./config");
 const { resolveOpenerId } = require("./permissions");
 
+const VOUCH_CHANNEL_ID = "1481374265340072047";
+
 function buildClaimRow(claimedById, viewerId = null) {
   if (!claimedById) {
     return new ActionRowBuilder().addComponents(
@@ -124,8 +126,111 @@ async function unclaimTicket({ channel, user }) {
   };
 }
 
+// ================= GIVEAWAY CLAIM VOUCH CHECK =================
+function isClaimTicket(channel) {
+  const saved = ticketStore.tickets[channel?.id];
+  if (saved?.type === "claim") return true;
+  if (typeof channel?.name === "string" && channel.name.startsWith("claim-")) return true;
+  if (typeof channel?.topic === "string" && /Type:\s*CLAIM/i.test(channel.topic)) return true;
+  return false;
+}
+
+async function hasRecentVouchInChannel(guild, openerId) {
+  if (!guild || !openerId) return false;
+  const vouchChannel = await guild.channels
+    .fetch(VOUCH_CHANNEL_ID)
+    .catch(() => null);
+  if (!vouchChannel || !vouchChannel.isTextBased()) return false;
+
+  const recent = await vouchChannel.messages.fetch({ limit: 50 }).catch(() => null);
+  if (!recent) return false;
+
+  return recent.some((msg) => !msg.author?.bot && msg.author?.id === openerId);
+}
+
+async function buildVouchCheckPayload(channel, guild) {
+  const openerId = resolveOpenerId(channel);
+  const openerMention = openerId ? `<@${openerId}>` : "the winner";
+  const foundRecent = await hasRecentVouchInChannel(guild, openerId);
+
+  const statusLine = openerId
+    ? foundRecent
+      ? `🔎 Quick scan: Found a recent message from ${openerMention} in <#${VOUCH_CHANNEL_ID}>.`
+      : `🔎 Quick scan: No recent message from ${openerMention} spotted in the last 50 messages of <#${VOUCH_CHANNEL_ID}>.`
+    : `🔎 Quick scan: Could not detect ticket opener ID automatically.`;
+
+  const embed = new EmbedBuilder()
+    .setTitle("🎟️ Vouch Check Before Closing Claim Ticket")
+    .setColor(0xf59e0b)
+    .setDescription(
+      `Has ${openerMention} already vouched in <#${VOUCH_CHANNEL_ID}>?\n\n` +
+      `${statusLine}\n\n` +
+      `• **Yes** — Close ticket & generate HTML transcript\n` +
+      `• **No** — Keep ticket open so they can vouch first`
+    )
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("tkt_vouch_yes")
+      .setLabel("Yes")
+      .setEmoji("✅")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId("tkt_vouch_no")
+      .setLabel("No")
+      .setEmoji("❌")
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  return { embeds: [embed], components: [row] };
+}
+
+async function handleVouchCheckButton({
+  interaction,
+  closeTicketChannel
+}) {
+  const { guild, user, channel, customId } = interaction;
+  const id = customId.toLowerCase();
+
+  if (id === "tkt_vouch_yes") {
+    if (channel?._vouchClosing) {
+      return interaction.reply({
+        content: "⏳ Already closing this ticket...",
+        ephemeral: true
+      }).catch(() => null);
+    }
+    if (channel) channel._vouchClosing = true;
+
+    await interaction.update({ components: [] }).catch(() => null);
+
+    return closeTicketChannel({
+      channel,
+      guild,
+      closedBy: user,
+      reason: "Confirmed vouched in vouch channel",
+      method: "Vouch Check (Yes)"
+    });
+  }
+
+  if (id === "tkt_vouch_no") {
+    await interaction.update({ components: [] }).catch(() => null);
+
+    const openerId = resolveOpenerId(channel);
+    const pingText = openerId ? `<@${openerId}> ` : "";
+
+    return channel.send(
+      `❌ ${pingText}Ticket kept open — please post your vouch in <#${VOUCH_CHANNEL_ID}> first, then staff can close this ticket.`
+    );
+  }
+}
+
 module.exports = {
+  VOUCH_CHANNEL_ID,
   buildClaimRow,
   claimTicket,
-  unclaimTicket
+  unclaimTicket,
+  isClaimTicket,
+  buildVouchCheckPayload,
+  handleVouchCheckButton
 };
