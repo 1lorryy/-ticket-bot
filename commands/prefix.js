@@ -5,7 +5,12 @@ const {
   canManageTicketMembers,
   addUserToTicket
 } = require("../permissions");
-const { claimTicket, unclaimTicket } = require("../claims");
+const {
+  claimTicket,
+  unclaimTicket,
+  isClaimTicket,
+  buildVouchCheckPayload
+} = require("../claims");
 const { closeTicketChannel } = require("../transcript");
 const { buildTicketPanelPayload } = require("../panel");
 
@@ -65,8 +70,9 @@ async function handlePrefixCommand(message, client) {
     if (!cleanName) {
       return message.reply(`❌ Usage: \`${PREFIX}rename new-name\``);
     }
+    await message.delete().catch(() => null);
     await channel.setName(cleanName);
-    return message.reply(`✏️ Renamed ticket to **#${cleanName}**.`);
+    return channel.send(`✏️ Renamed ticket to **#${cleanName}**.`);
   }
 
   if (cmd === "close") {
@@ -74,6 +80,15 @@ async function handlePrefixCommand(message, client) {
       return message.reply("❌ Only staff members can close tickets.");
     }
     const reason = args.join(" ").trim() || "No reason provided";
+    await message.delete().catch(() => null);
+
+    if (isClaimTicket(channel)) {
+      channel._pendingCloseReason = reason;
+      channel._pendingCloseMethod = "Prefix Command";
+      const vouchPayload = await buildVouchCheckPayload(channel, guild);
+      return channel.send(vouchPayload);
+    }
+
     return closeTicketChannel({
       channel,
       guild,
