@@ -8,14 +8,18 @@ const {
 const { claimTicket, unclaimTicket } = require("../claims");
 const { closeTicketChannel } = require("../transcript");
 const { buildTicketPanelPayload } = require("../panel");
-const { botInfoSlashCommand, handleBotInfoSlash } = require("../botInfo");
 const {
   ticketSetupSlashCommand,
   handleTicketSetupSlash
 } = require("../ticketSetup");
+const {
+  botInfoSlashCommand,
+  handleBotInfoSlash
+} = require("../botInfo");
 
 const slashCommands = [
   ticketSetupSlashCommand,
+  botInfoSlashCommand,
   new SlashCommandBuilder()
     .setName("ticketpanel")
     .setDescription("Send the ticket creation panel in this channel")
@@ -48,6 +52,10 @@ const slashCommands = [
 
 async function handleSlashCommand(interaction) {
   const { guild, user, member, channel, commandName: cmd } = interaction;
+
+  if (cmd === "botinfo") {
+    return handleBotInfoSlash(interaction);
+  }
 
   if (cmd === "ticketsetup") {
     return handleTicketSetupSlash(interaction);
@@ -145,10 +153,6 @@ async function handleSlashCommand(interaction) {
     if (!res.ok) return interaction.reply({ content: res.error, ephemeral: true });
     return interaction.reply({ content: res.content });
   }
-}
-
-if (cmd === "botinfo") {
-  return handleBotInfoSlash(interaction);
 }
 
 module.exports = {
