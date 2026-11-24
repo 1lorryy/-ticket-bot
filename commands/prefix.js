@@ -13,6 +13,7 @@ const {
 } = require("../claims");
 const { closeTicketChannel } = require("../transcript");
 const { buildTicketPanelPayload } = require("../panel");
+const { handleTicketSetupPrefix } = require("../ticketSetup");
 
 function deleteAfter(msg, delayMs = 5000) {
   if (!msg) return;
@@ -32,6 +33,10 @@ async function handlePrefixCommand(message, client) {
 
   const { guild, member, channel, author } = message;
 
+  if (cmd === "tsetup" || cmd === "ticketsetup") {
+    return handleTicketSetupPrefix(message, args);
+  }
+
   if (cmd === "ticketpanel") {
     if (!isTicketStaff(member)) {
       return message.reply("❌ Only staff members can send the ticket panel.");
@@ -47,7 +52,7 @@ async function handlePrefixCommand(message, client) {
   }
 
   if (cmd === "add") {
-    if (!canManageTicketMembers(member)) {
+    if (!canManageTicketMembers(member, channel)) {
       return message.reply("❌ Only staff members can add users to tickets.");
     }
     const rawTarget = args[0]?.replace(/[<@!>]/g, "");
@@ -65,7 +70,7 @@ async function handlePrefixCommand(message, client) {
   }
 
   if (cmd === "rename") {
-    if (!isTicketStaff(member)) {
+    if (!isTicketStaff(member, channel)) {
       return message.reply("❌ Only staff members can rename tickets.");
     }
     const rawName = args.join("-");
@@ -86,7 +91,7 @@ async function handlePrefixCommand(message, client) {
   }
 
   if (cmd === "close") {
-    if (!isTicketStaff(member)) {
+    if (!isTicketStaff(member, channel)) {
       return message.reply("❌ Only staff members can close tickets.");
     }
     const reason = args.join(" ").trim() || "No reason provided";
@@ -111,7 +116,7 @@ async function handlePrefixCommand(message, client) {
   }
 
   if (cmd === "claim") {
-    if (!isTicketStaff(member)) {
+    if (!isTicketStaff(member, channel)) {
       return message.reply("❌ Only staff members can claim tickets.");
     }
     const res = await claimTicket({ channel, guild, user: author });
@@ -120,7 +125,7 @@ async function handlePrefixCommand(message, client) {
   }
 
   if (cmd === "unclaim") {
-    if (!isTicketStaff(member)) {
+    if (!isTicketStaff(member, channel)) {
       return message.reply("❌ Only staff members can manage ticket claims.");
     }
     const res = await unclaimTicket({ channel, user: author });
