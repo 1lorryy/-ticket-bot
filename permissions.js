@@ -3,6 +3,8 @@ const {
   STAFF_ROLE_IDS,
   TICKET_MANAGER_ROLE_IDS,
   ALLOWED_CATEGORY_IDS,
+  HOSTER_ROLE_ID,
+  CLAIM_CATEGORY_ID,
   ticketStore,
   saveTickets
 } = require("./config");
@@ -15,20 +17,44 @@ function isTicketChannel(channel) {
   return false;
 }
 
-function isTicketStaff(member) {
+function isClaimCategoryTicket(channel) {
+  if (!channel) return false;
+  if (channel.parentId === CLAIM_CATEGORY_ID) return true;
+  const saved = ticketStore.tickets[channel.id];
+  if (saved?.categoryId === CLAIM_CATEGORY_ID || saved?.category === "claim") return true;
+  return false;
+}
+
+function isHosterForClaimTicket(member, channel) {
+  if (!member || !channel) return false;
+  if (!member.roles?.cache?.has(HOSTER_ROLE_ID)) return false;
+  return isClaimCategoryTicket(channel);
+}
+
+function isTicketStaff(member, channel = null) {
   if (!member) return false;
   if (member.permissions?.has(PermissionFlagsBits.Administrator)) return true;
   if (member.roles?.cache) {
-    return STAFF_ROLE_IDS.some((roleId) => member.roles.cache.has(roleId));
+    if (STAFF_ROLE_IDS.some((roleId) => member.roles.cache.has(roleId))) {
+      return true;
+    }
+    if (channel && isHosterForClaimTicket(member, channel)) {
+      return true;
+    }
   }
   return false;
 }
 
-function canManageTicketMembers(member) {
+function canManageTicketMembers(member, channel = null) {
   if (!member) return false;
   if (member.permissions?.has(PermissionFlagsBits.Administrator)) return true;
   if (member.roles?.cache) {
-    return TICKET_MANAGER_ROLE_IDS.some((roleId) => member.roles.cache.has(roleId));
+    if (TICKET_MANAGER_ROLE_IDS.some((roleId) => member.roles.cache.has(roleId))) {
+      return true;
+    }
+    if (channel && isHosterForClaimTicket(member, channel)) {
+      return true;
+    }
   }
   return false;
 }
@@ -79,6 +105,8 @@ async function addUserToTicket({ channel, guild, targetUser, addedBy }) {
 
 module.exports = {
   isTicketChannel,
+  isClaimCategoryTicket,
+  isHosterForClaimTicket,
   isTicketStaff,
   canManageTicketMembers,
   resolveOpenerId,
