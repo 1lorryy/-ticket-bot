@@ -4,10 +4,8 @@ const {
   ButtonStyle,
   EmbedBuilder
 } = require("discord.js");
-const { ticketStore, saveTickets } = require("./config");
+const { VOUCH_CHANNEL_ID, ticketStore, saveTickets } = require("./config");
 const { resolveOpenerId } = require("./permissions");
-
-const VOUCH_CHANNEL_ID = "1481374265340072047";
 
 function buildClaimRow(claimedById, viewerId = null) {
   if (!claimedById) {
@@ -204,13 +202,18 @@ async function handleVouchCheckButton({
 
     await interaction.update({ components: [] }).catch(() => null);
 
-    return closeTicketChannel({
-      channel,
-      guild,
-      closedBy: user,
-      reason: "Confirmed vouched in vouch channel",
-      method: "Vouch Check (Yes)"
-    });
+    try {
+      return await closeTicketChannel({
+        channel,
+        guild,
+        closedBy: user,
+        reason: channel?._pendingCloseReason || "Confirmed vouched in vouch channel",
+        method: channel?._pendingCloseMethod || "Vouch Check (Yes)"
+      });
+    } catch (err) {
+      if (channel) channel._vouchClosing = false;
+      throw err;
+    }
   }
 
   if (id === "tkt_vouch_no") {
