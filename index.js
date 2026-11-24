@@ -67,7 +67,7 @@ client.on("interactionCreate", async (interaction) => {
     interaction.isModalSubmit() &&
     interaction.customId === "tkt_close_reason_modal"
   ) {
-    if (!isTicketStaff(member)) {
+    if (!isTicketStaff(member, channel)) {
       return interaction.reply({
         content: "❌ Only staff members can close tickets.",
         ephemeral: true
@@ -99,7 +99,7 @@ client.on("interactionCreate", async (interaction) => {
     const id = interaction.customId.toLowerCase();
 
     if (id === "tkt_vouch_yes" || id === "tkt_vouch_no") {
-      if (!isTicketStaff(member)) {
+      if (!isTicketStaff(member, channel)) {
         return interaction.reply({
           content: "❌ Only staff members can respond to the vouch check.",
           ephemeral: true
@@ -112,7 +112,7 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     if (id === "tkt_close") {
-      if (!isTicketStaff(member)) {
+      if (!isTicketStaff(member, channel)) {
         return interaction.reply({
           content: "❌ Only staff members can close tickets.",
           ephemeral: true
@@ -136,7 +136,7 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     if (id === "tkt_close_reason") {
-      if (!isTicketStaff(member)) {
+      if (!isTicketStaff(member, channel)) {
         return interaction.reply({
           content: "❌ Only staff members can close tickets.",
           ephemeral: true
@@ -157,7 +157,7 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     if (id === "tkt_claim") {
-      if (!isTicketStaff(member)) {
+      if (!isTicketStaff(member, channel)) {
         return interaction.reply({
           content: "❌ Only staff members can claim tickets.",
           ephemeral: true
@@ -169,7 +169,7 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     if (id === "tkt_unclaim") {
-      if (!isTicketStaff(member)) {
+      if (!isTicketStaff(member, channel)) {
         return interaction.reply({
           content: "❌ Only staff members can manage ticket claims.",
           ephemeral: true
