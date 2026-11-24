@@ -34,6 +34,10 @@ async function handlePrefixCommand(message, client) {
 
   const { guild, member, channel, author } = message;
 
+  if (cmd === "botinfo" || cmd === "about") {
+    return handleBotInfoPrefix(message, client);
+  }
+
   if (cmd === "tsetup" || cmd === "ticketsetup") {
     return handleTicketSetupPrefix(message, args);
   }
@@ -133,10 +137,6 @@ async function handlePrefixCommand(message, client) {
     if (!res.ok) return message.reply(res.error);
     return message.reply(res.content);
   }
-}
-
-if (cmd === "botinfo" || cmd === "about") {
-  return handleBotInfoPrefix(message, client);
 }
 
 module.exports = {
