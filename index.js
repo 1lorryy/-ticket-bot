@@ -22,6 +22,7 @@ const { closeTicketChannel } = require("./transcript");
 const { createTicketChannel } = require("./panel");
 const { slashCommands, handleSlashCommand } = require("./commands/slash");
 const { handlePrefixCommand } = require("./commands/prefix");
+const { handleVouchMessage } = require("./vouchCounter");
 
 async function registerSlashCommands() {
   if (!TOKEN || !CLIENT_ID) {
