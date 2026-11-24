@@ -8,6 +8,7 @@ const {
 const { claimTicket, unclaimTicket } = require("../claims");
 const { closeTicketChannel } = require("../transcript");
 const { buildTicketPanelPayload } = require("../panel");
+const { botInfoSlashCommand, handleBotInfoSlash } = require("../botInfo");
 const {
   ticketSetupSlashCommand,
   handleTicketSetupSlash
@@ -144,6 +145,10 @@ async function handleSlashCommand(interaction) {
     if (!res.ok) return interaction.reply({ content: res.error, ephemeral: true });
     return interaction.reply({ content: res.content });
   }
+}
+
+if (cmd === "botinfo") {
+  return handleBotInfoSlash(interaction);
 }
 
 module.exports = {
