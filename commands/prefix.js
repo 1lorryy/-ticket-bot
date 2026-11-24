@@ -14,6 +14,7 @@ const {
 const { closeTicketChannel } = require("../transcript");
 const { buildTicketPanelPayload } = require("../panel");
 const { handleTicketSetupPrefix } = require("../ticketSetup");
+const { handleBotInfoPrefix } = require("../botInfo");
 
 function deleteAfter(msg, delayMs = 5000) {
   if (!msg) return;
@@ -132,6 +133,10 @@ async function handlePrefixCommand(message, client) {
     if (!res.ok) return message.reply(res.error);
     return message.reply(res.content);
   }
+}
+
+if (cmd === "botinfo" || cmd === "about") {
+  return handleBotInfoPrefix(message, client);
 }
 
 module.exports = {
