@@ -197,7 +197,11 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-client.on("messageCreate", (message) => {
+client.on("messageCreate", async (message) => {
+  await handleVouchMessage(message).catch((err) => {
+    console.error("❌ Vouch counter error:", err);
+  });
+
   handlePrefixCommand(message, client).catch((err) => {
     console.error("❌ Prefix command error:", err);
   });
