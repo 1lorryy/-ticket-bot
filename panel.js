@@ -10,6 +10,8 @@ const {
   PREFIX,
   TICKET_PING_ROLE_ID,
   STAFF_ROLE_ID,
+  HOSTER_ROLE_ID,
+  CLAIM_CATEGORY_ID,
   TICKET_CATEGORIES,
   ticketStore,
   saveTickets
@@ -96,6 +98,19 @@ async function createTicketChannel({ guild, user, type }) {
     });
   }
 
+  // Only grant Hoster role visibility/access on Claim tickets
+  const isClaimType = type === "claim" || categoryId === CLAIM_CATEGORY_ID;
+  if (isClaimType && HOSTER_ROLE_ID) {
+    permissionOverwrites.push({
+      id: HOSTER_ROLE_ID,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory
+      ]
+    });
+  }
+
   const ticketChannel = await guild.channels.create({
     name: channelName,
     type: ChannelType.GuildText,
@@ -113,6 +128,7 @@ async function createTicketChannel({ guild, user, type }) {
     claimedByTag: null,
     addedUserIds: [],
     type,
+    categoryId,
     ticketNumber: ticketNum,
     createdAt: Date.now()
   };
