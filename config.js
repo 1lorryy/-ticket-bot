@@ -39,15 +39,20 @@ const TICKETS_FILE = process.env.TICKET_DATA_FILE
 
 function loadTickets() {
   try {
-    if (!fs.existsSync(TICKETS_FILE)) return { tickets: {}, counter: 0 };
+    if (!fs.existsSync(TICKETS_FILE)) {
+      return { tickets: {}, counter: 0, vouchCount: 787, lastRenamedVouchCount: 787 };
+    }
     const parsed = JSON.parse(fs.readFileSync(TICKETS_FILE, "utf8"));
     return {
       tickets: parsed.tickets && typeof parsed.tickets === "object" ? parsed.tickets : {},
-      counter: typeof parsed.counter === "number" ? parsed.counter : 0
+      counter: typeof parsed.counter === "number" ? parsed.counter : 0,
+      vouchCount: typeof parsed.vouchCount === "number" ? parsed.vouchCount : 787,
+      lastRenamedVouchCount:
+        typeof parsed.lastRenamedVouchCount === "number" ? parsed.lastRenamedVouchCount : 787
     };
   } catch (err) {
     console.error("❌ Failed to load tickets-data.json:", err);
-    return { tickets: {}, counter: 0 };
+    return { tickets: {}, counter: 0, vouchCount: 787, lastRenamedVouchCount: 787 };
   }
 }
 
