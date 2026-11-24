@@ -8,8 +8,13 @@ const {
 const { claimTicket, unclaimTicket } = require("../claims");
 const { closeTicketChannel } = require("../transcript");
 const { buildTicketPanelPayload } = require("../panel");
+const {
+  ticketSetupSlashCommand,
+  handleTicketSetupSlash
+} = require("../ticketSetup");
 
 const slashCommands = [
+  ticketSetupSlashCommand,
   new SlashCommandBuilder()
     .setName("ticketpanel")
     .setDescription("Send the ticket creation panel in this channel")
@@ -43,6 +48,10 @@ const slashCommands = [
 async function handleSlashCommand(interaction) {
   const { guild, user, member, channel, commandName: cmd } = interaction;
 
+  if (cmd === "ticketsetup") {
+    return handleTicketSetupSlash(interaction);
+  }
+
   if (cmd === "ticketpanel") {
     if (!isTicketStaff(member)) {
       return interaction.reply({
@@ -62,7 +71,7 @@ async function handleSlashCommand(interaction) {
   }
 
   if (cmd === "add") {
-    if (!canManageTicketMembers(member)) {
+    if (!canManageTicketMembers(member, channel)) {
       return interaction.reply({
         content: "❌ Only staff members can add users to tickets.",
         ephemeral: true
@@ -75,7 +84,7 @@ async function handleSlashCommand(interaction) {
   }
 
   if (cmd === "rename") {
-    if (!isTicketStaff(member)) {
+    if (!isTicketStaff(member, channel)) {
       return interaction.reply({
         content: "❌ Only staff members can rename tickets.",
         ephemeral: true
@@ -95,7 +104,7 @@ async function handleSlashCommand(interaction) {
   }
 
   if (cmd === "close") {
-    if (!isTicketStaff(member)) {
+    if (!isTicketStaff(member, channel)) {
       return interaction.reply({
         content: "❌ Only staff members can close tickets.",
         ephemeral: true
@@ -113,7 +122,7 @@ async function handleSlashCommand(interaction) {
   }
 
   if (cmd === "claim") {
-    if (!isTicketStaff(member)) {
+    if (!isTicketStaff(member, channel)) {
       return interaction.reply({
         content: "❌ Only staff members can claim tickets.",
         ephemeral: true
@@ -125,7 +134,7 @@ async function handleSlashCommand(interaction) {
   }
 
   if (cmd === "unclaim") {
-    if (!isTicketStaff(member)) {
+    if (!isTicketStaff(member, channel)) {
       return interaction.reply({
         content: "❌ Only staff members can manage ticket claims.",
         ephemeral: true
